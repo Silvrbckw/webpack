@@ -163,9 +163,9 @@ describe("Compiler", () => {
 	it("should compile a file with multiple chunks", done => {
 		compile("./chunks", {}, (stats, files) => {
 			expect(stats.chunks).toHaveLength(2);
-			expect(Object.keys(files)).toEqual(["/main.js", "/394.js"]);
+			expect(Object.keys(files)).toEqual(["/main.js", "/78.js"]);
 			const bundle = files["/main.js"];
-			const chunk = files["/394.js"];
+			const chunk = files["/78.js"];
 			expect(bundle).toMatch("function __webpack_require__(");
 			expect(bundle).toMatch("__webpack_require__(/*! ./b */");
 			expect(chunk).not.toMatch("__webpack_require__(/* ./b */");
@@ -225,6 +225,12 @@ describe("Compiler", () => {
 			} else {
 				callback();
 			}
+		});
+		it("default platform info", done => {
+			const platform = compiler.platform;
+			expect(platform.web).toBe(true);
+			expect(platform.node).toBe(false);
+			done();
 		});
 		describe("purgeInputFileSystem", () => {
 			it("invokes purge() if inputFileSystem.purge", done => {
@@ -287,6 +293,29 @@ describe("Compiler", () => {
 			});
 		});
 	});
+
+	it("PlatformPlugin", done => {
+		const webpack = require("..");
+		const compiler = webpack({
+			entry: "./c",
+			context: path.join(__dirname, "fixtures"),
+			output: {
+				path: "/directory"
+			},
+			plugins: [
+				new (require("../lib/PlatformPlugin"))({ node: true }),
+				compiler => {
+					compiler.hooks.afterEnvironment.tap("test", () => {
+						const platform = compiler.platform;
+						expect(platform.node).toBe(true);
+						expect(platform.web).toBe(true);
+					});
+				}
+			]
+		});
+		compiler.close(done);
+	});
+
 	it("should not emit on errors", done => {
 		const webpack = require("..");
 		compiler = webpack({
